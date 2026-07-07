@@ -1,0 +1,108 @@
+.app-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f8; /* Fond clair pour le site */
+  color: #222222;            /* Texte général en noir/gris foncé */
+}
+
+h1 {
+  text-align: center;
+  color: #E31837; /* Rouge Airtel */
+  margin-bottom: 30px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.report-form {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 12px;
+  border-top: 5px solid #E31837; /* Ligne de marque Rouge Airtel */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.form-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+label {
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #222222; /* Gris foncé pour une excellente lisibilité */
+  font-size: 14px;
+}
+
+input, textarea {
+  padding: 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  background-color: #fafafa;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #E31837; /* Le champ s'illumine en rouge quand on clique dedans */
+  background-color: #ffffff;
+}
+
+/* Bouton principal aux couleurs d'Airtel */
+button.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #E31837; /* Rouge Airtel */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  text-transform: uppercase;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+button.submit-btn:hover {
+  background-color: #c6122e; /* Rouge un peu plus sombre au survol */
+}
+
+button.submit-btn:active {
+  transform: scale(0.98);
+}
+
+/* Alertes de confirmation */
+.alert {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.success { 
+  background-color: #e6f4ea; 
+  color: #137333; 
+  border: 1px solid #c4eed0;
+}
+
+.error { 
+  background-color: #fce8e6; 
+  color: #c5221f; 
+  border: 1px solid #fad2cf;
+}
