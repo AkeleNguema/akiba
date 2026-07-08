@@ -1,3 +1,4 @@
+// Model DailyReport.js
 const mongoose = require('mongoose');
 
 const DailyReportSchema = new mongoose.Schema({
@@ -10,40 +11,30 @@ const DailyReportSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    // Les Flux Financiers demandés
-    soldeAM: {
-        type: Number,
-        required: true,
-        default: 0
-    },
-    soldeExpress: {
-        type: Number,
-        required: true,
-        default: 0
-    },
-    soldeEspeces: {
-        type: Number,
-        required: true,
-        default: 0
-    },
-    // Calculs de contrôle
-    attendu: {
-        type: Number,
-        required: true
-    },
-    reel: {
-        type: Number,
-        required: true
-    },
-    ecart: {
-        type: Number,
-        required: true,
-        default: 0 // (Reel - Attendu) -> Positif (en plus), Négatif (en moins)
-    },
-    note: {
+    moment: {
         type: String,
-        trim: true
-    }
+        required: true,
+        enum: ['Matin', 'Soir'],
+        default: 'Soir'
+    },
+    // Les 5 Flux Financiers pour le calcul du total
+    soldeAM1: { type: Number, default: 0 },
+    soldeAM2: { type: Number, default: 0 },
+    soldePrincipalLibertis: { type: Number, default: 0 },
+    soldeCashoutLibertis: { type: Number, default: 0 },
+    soldeExpress: { type: Number, default: 0 },
+    
+    // Autres flux saisis (exclus du calcul automatique)
+    soldeEspeces: { type: Number, default: 0 },
+    venteSim: { type: Number, default: 0 },
+    divers: { type: Number, default: 0 },
+    comAM1: { type: Number, default: 0 },
+    comAM2: { type: Number, default: 0 },
+    comMC: { type: Number, default: 0 },
+    
+    // Le Total automatique requis
+    totalCalcule: { type: Number, default: 0 },
+    note: { type: String, trim: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('DailyReport', DailyReportSchema);
