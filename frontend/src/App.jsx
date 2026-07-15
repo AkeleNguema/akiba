@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import KioskCard from './components/KioskCard'; // 🆕 Import du nouveau composant
+import KioskCard from './components/KioskCard'; // Import du nouveau composant
 import './App.css';
 
 function App() {
@@ -59,7 +59,6 @@ function App() {
 
   const handleSelectKiosk = (name, id) => {
     // Étape transitoire : On connecte directement le kiosque au clic
-    // (C'est ici qu'on placera le pop-up du code PIN à l'étape suivante !)
     setKioskConnecte(name);
   };
 
@@ -115,7 +114,7 @@ function App() {
           </div>
           <h2 className="home-subtitle">Sélectionnez votre Kiosque :</h2>
           <div className="kiosks-grid">
-            {kiewksData = kiosksData.map(kiosk => (
+            {kiosksData.map(kiosk => (
               <KioskCard 
                 key={kiosk.id} 
                 name={kiosk.name} 
@@ -127,7 +126,7 @@ function App() {
         </div>
       ) : (
         
-        /* ÉCRAN DE TRAVAIL (FORMULAIRE & TICKETS) - S'affiche uniquement si un kiosque est connecté */
+        /* ÉCRAN DE TRAVAIL (FORMULAIRE & TICKETS) */
         <>
           <div className="header-akiba">
             <div className="brand-zone">
@@ -180,7 +179,6 @@ function App() {
                 <div className="ticket-view-display">
                   {ticketSelectionne ? (
                     <div className="receipt-ticket">
-                      {/* Structure ticket de caisse inchangée... */}
                       <div className="receipt-header">
                         <h3>🧾 REÇU DE CAISSE AKIBA</h3>
                         <p className="receipt-kiosk">{ticketSelectionne.kioskName}</p>
@@ -229,7 +227,6 @@ function App() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="report-form">
-              {/* Contenu du formulaire inchangé... */}
               <div className="form-row">
                 <div className="form-group">
                   <label>Date du Rapport :</label>
@@ -244,7 +241,6 @@ function App() {
                 </div>
               </div>
               
-              {/* Reste des inputs (Airtel, Libertis etc...) */}
               <h3 className="section-title">📱 Détail Airtel Money</h3>
               <div className="form-row"><div className="form-group"><label>Solde AM1 :</label><input type="number" name="soldeAM1" value={formData.soldeAM1} onChange={handleChange} /></div><div className="form-group"><label>Solde AM2 :</label><input type="number" name="soldeAM2" value={formData.soldeAM2} onChange={handleChange} /></div></div>
               <h3 className="section-title">📞 Détail Libertis</h3>
