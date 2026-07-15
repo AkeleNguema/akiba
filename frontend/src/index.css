@@ -66,3 +66,109 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+/* --- DESIGN ÉCRAN D'ACCUEIL & KIOSK CARDS --- */
+.home-screen {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.welcome-header h1 {
+  font-size: 42px;
+  font-weight: 900;
+  color: var(--primary-color);
+  margin-bottom: 5px;
+  letter-spacing: 2px;
+}
+
+.welcome-header p {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-top: 0;
+  font-weight: 500;
+}
+
+.home-subtitle {
+  font-size: 16px;
+  color: var(--text-main);
+  margin-top: 40px;
+  margin-bottom: 20px;
+  text-align: left;
+  font-weight: 700;
+}
+
+.kiosks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kiosk-card {
+  background: var(--bg-card);
+  padding: 16px 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e0e2e6;
+  text-align: left;
+}
+
+.kiosk-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  border-color: var(--primary-color);
+}
+
+.kiosk-icon {
+  font-size: 24px;
+  margin-right: 15px;
+}
+
+.kiosk-card-info {
+  flex: 1;
+}
+
+.kiosk-card-info h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.kiosk-card-info small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.kiosk-arrow {
+  color: var(--text-muted);
+  font-size: 16px;
+  transition: color 0.2s;
+}
+
+.kiosk-card:hover .kiosk-arrow {
+  color: var(--primary-color);
+}
+
+.brand-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.logout-btn:hover {
+  text-decoration: underline;
+}

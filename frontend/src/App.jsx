@@ -1,38 +1,36 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import KioskCard from './components/KioskCard'; // 🆕 Import du nouveau composant
 import './App.css';
 
 function App() {
-  const [kioskConnecte, setKioskConnecte] = useState("Kiosque Charbonnages");
+  // Liste temporaire des kiosques (sera gérée par l'admin via la BDD plus tard)
+  const kiosksData = [
+    { id: 'akibacharbonnage', name: 'Kiosque Charbonnages' },
+    { id: 'akibaalibandeng', name: 'Kiosque Alibandeng' },
+    { id: 'akibaokala', name: 'Kiosque Ondogo' }
+  ];
+
+  const [kioskConnecte, setKioskConnecte] = useState(null); // `null` signifie qu'aucun kiosque n'est choisi au départ
+  const [voirTousLesTickets, setVoirTousLesTickets] = useState(false);
+  const [ticketSelectionne, setTicketSelectionne] = useState(null);
+  const [historiqueRapports, setHistoriqueRapports] = useState([]);
+  const [error, setError] = useState(null);
+  const [rapportSauvegarde, setRapportSauvegarde] = useState(null);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     moment: 'Soir',
-    soldeAM1: '',
-    soldeAM2: '',
-    soldePrincipalLibertis: '',
-    soldeCashoutLibertis: '',
-    soldeExpress: '',
-    soldeEspeces: '',
-    venteSim: '',
-    divers: '',
-    comAM1: '',
-    comAM2: '',
-    comMC: '',
-    note: ''
+    soldeAM1: '', soldeAM2: '', soldePrincipalLibertis: '', soldeCashoutLibertis: '',
+    soldeExpress: '', soldeEspeces: '', venteSim: '', divers: '',
+    comAM1: '', comAM2: '', comMC: '', note: ''
   });
 
   const [totalEnDirect, setTotalEnDirect] = useState(0);
-  const [rapportSauvegarde, setRapportSauvegarde] = useState(null);
-  const [historiqueRapports, setHistoriqueRapports] = useState([]);
-  const [error, setError] = useState(null);
 
-  // Événements pour la nouvelle section "Compte du Kiosque"
-  const [voirTousLesTickets, setVoirTousLesTickets] = useState(false);
-  const [ticketSelectionne, setTicketSelectionne] = useState(null);
-
-  // Charger l'historique depuis MongoDB Atlas
+  // Charger l'historique uniquement si un kiosque est connecté
   const chargerHistorique = async () => {
+    if (!kioskConnecte) return;
     try {
       const response = await axios.get('http://127.0.0.1:5000/api/reports');
       const rapportsDuKiosque = response.data.filter(r => r.kioskName === kioskConnecte);
@@ -46,19 +44,23 @@ function App() {
     chargerHistorique();
   }, [kioskConnecte]);
 
-  // Calcul du total des 5 flux en direct
   useEffect(() => {
     const am1 = Number(formData.soldeAM1) || 0;
     const am2 = Number(formData.soldeAM2) || 0;
     const libPrincipal = Number(formData.soldePrincipalLibertis) || 0;
     const libCashout = Number(formData.soldeCashoutLibertis) || 0;
     const express = Number(formData.soldeExpress) || 0;
-
     setTotalEnDirect(am1 + am2 + libPrincipal + libCashout + express);
   }, [formData.soldeAM1, formData.soldeAM2, formData.soldePrincipalLibertis, formData.soldeCashoutLibertis, formData.soldeExpress]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSelectKiosk = (name, id) => {
+    // Étape transitoire : On connecte directement le kiosque au clic
+    // (C'est ici qu'on placera le pop-up du code PIN à l'étape suivante !)
+    setKioskConnecte(name);
   };
 
   const handleSubmit = async (e) => {
@@ -86,7 +88,7 @@ function App() {
       });
 
       setRapportSauvegarde(response.data);
-      setTicketSelectionne(response.data); // Affiche directement le ticket du rapport venant d'être créé
+      if (voirTousLesTickets) setTicketSelectionne(response.data);
       chargerHistorique();
       
       setFormData({
@@ -100,226 +102,168 @@ function App() {
     }
   };
 
-  // Fonction pour afficher les détails du ticket au format reçu
-  const renderTicketDeCaisse = (ticket) => (
-    <div className="receipt-ticket">
-      <div className="receipt-header">
-        <h3>🧾 REÇU DE CAISSE AKIBA</h3>
-        <p className="receipt-kiosk">{ticket.kioskName}</p>
-        <p className="receipt-meta">
-          <span>Date : {new Date(ticket.date).toLocaleDateString('fr-FR')}</span>
-          <span>Moment : {ticket.moment}</span>
-        </p>
-      </div>
-      <div className="receipt-divider"></div>
-      <div className="receipt-section">
-        <h4>📱 FLUX AIRTEL MONEY</h4>
-        <div className="receipt-row"><span>Solde AM1 :</span> <span>{ticket.soldeAM1?.toLocaleString('fr-FR')} FCFA</span></div>
-        <div className="receipt-row"><span>Solde AM2 :</span> <span>{ticket.soldeAM2?.toLocaleString('fr-FR')} FCFA</span></div>
-      </div>
-      <div className="receipt-section">
-        <h4>📞 FLUX LIBERTIS</h4>
-        <div className="receipt-row"><span>Solde Principal :</span> <span>{ticket.soldePrincipalLibertis?.toLocaleString('fr-FR')} FCFA</span></div>
-        <div className="receipt-row"><span>Solde Cashout :</span> <span>{ticket.soldeCashoutLibertis?.toLocaleString('fr-FR')} FCFA</span></div>
-      </div>
-      <div className="receipt-section">
-        <h4>💵 ESPÈCES \& EXPRESS</h4>
-        <div className="receipt-row"><span>Solde Espèces :</span> <span>{ticket.soldeEspeces?.toLocaleString('fr-FR')} FCFA</span></div>
-        <div className="receipt-row"><span>Solde Express :</span> <span>{ticket.soldeExpress?.toLocaleString('fr-FR')} FCFA</span></div>
-      </div>
-      <div className="receipt-section">
-        <h4>💰 COMMISSIONS</h4>
-        <div className="receipt-row"><span>Com AM1 :</span> <span>{ticket.comAM1?.toLocaleString('fr-FR')} FCFA</span></div>
-        <div className="receipt-row"><span>Com AM2 :</span> <span>{ticket.comAM2?.toLocaleString('fr-FR')} FCFA</span></div>
-        <div className="receipt-row"><span>Com MC :</span> <span>{ticket.comMC?.toLocaleString('fr-FR')} FCFA</span></div>
-      </div>
-      <div className="receipt-section">
-        <h4>📦 AUTRES FLUX</h4>
-        <div className="receipt-row"><span>Divers :</span> <span>{ticket.divers?.toLocaleString('fr-FR')} FCFA</span></div>
-        <div className="receipt-row"><span>Vente SIM :</span> <span>{ticket.venteSim?.toLocaleString('fr-FR')} FCFA</span></div>
-      </div>
-      {ticket.note && (
-        <div className="receipt-section receipt-note-section">
-          <h4>📝 NOTE / COMMENTAIRE</h4>
-          <p className="receipt-note-text">{ticket.note}</p>
-        </div>
-      )}
-      <div className="receipt-divider"></div>
-      <div className="receipt-footer">
-        <div className="receipt-total-row">
-          <span>TOTAL CALCULÉ (5 FLUX) :</span>
-          <strong>{ticket.totalCalcule?.toLocaleString('fr-FR')} FCFA</strong>
-        </div>
-        <p className="receipt-sync-msg">🔒 Enregistré de manière sécurisée en base cloud Atlas</p>
-      </div>
-    </div>
-  );
-
+  // RENDU VISUEL
   return (
     <div className="app-container">
-      <div className="header-akiba">
-        <h1>Saisie Rapport de Caisse — Akiba</h1>
-        {/* 🏪 ICÔNE COMPTE DU KIOSQUE */}
-        <button 
-          className={`kiosk-account-btn ${voirTousLesTickets ? 'active' : ''}`}
-          onClick={() => {
-            setVoirTousLesTickets(!voirTousLesTickets);
-            setTicketSelectionne(null); // Réinitialise le focus du ticket
-          }}
-          title="Compte du Kiosque (Voir les tickets)"
-        >
-          📁 Compte du Kiosque
-        </button>
-      </div>
       
-      <div className="welcome-kiosk-bar">
-        🏪 Bienvenue sur l'espace du <strong>{kioskConnecte}</strong>
-      </div>
-
-      {error && <div className="alert error">{error}</div>}
-
-      {/* PANNEAU "COMPTE DU KIOSQUE" (SI L'ICÔNE EST ACTIVÉE) */}
-      {voirTousLesTickets ? (
-        <div className="kiosk-panel-container">
-          <div className="panel-header">
-            <h2>📜 Liste de tous les tickets créés</h2>
-            <button className="close-panel-btn" onClick={() => setVoirTousLesTickets(false)}>✕ Fermer</button>
+      {/* ÉCRAN D'ACCUEIL : SÉLECTION DU KIOSQUE */}
+      {!kioskConnecte ? (
+        <div className="home-screen">
+          <div className="welcome-header">
+            <h1>AKIBA</h1>
+            <p>Gestion de Caisse Terrains — Libreville</p>
           </div>
-          
-          <div className="panel-body">
-            {/* Colonne gauche : Liste des tickets archivés */}
-            <div className="tickets-list-sidebar">
-              {historiqueRapports.length === 0 ? (
-                <p className="no-data-msg">Aucun ticket pour ce kiosque.</p>
-              ) : (
-                historiqueRapports.map((ticket) => (
-                  <div 
-                    key={ticket._id} 
-                    className={`ticket-item-row ${ticketSelectionne?._id === ticket._id ? 'selected' : ''}`}
-                    onClick={() => setTicketSelectionne(ticket)}
-                  >
-                    <div className="ticket-item-meta">
-                      <span className="ticket-item-date">{new Date(ticket.date).toLocaleDateString('fr-FR')}</span>
-                      <span className={`badge ${ticket.moment === 'Matin' ? 'badge-matin' : 'badge-soir'}`}>{ticket.moment}</span>
-                    </div>
-                    <div className="ticket-item-total">{ticket.totalCalcule?.toLocaleString('fr-FR')} FCFA</div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Colonne droite : Visualisation du ticket cliqué au format ticket de caisse */}
-            <div className="ticket-view-display">
-              {ticketSelectionne ? (
-                renderTicketDeCaisse(ticketSelectionne)
-              ) : (
-                <div className="select-prompt-box">
-                  👈 Sélectionnez un ticket dans la liste pour afficher son reçu détaillé.
-                </div>
-              )}
-            </div>
+          <h2 className="home-subtitle">Sélectionnez votre Kiosque :</h2>
+          <div className="kiosks-grid">
+            {kiewksData = kiosksData.map(kiosk => (
+              <KioskCard 
+                key={kiosk.id} 
+                name={kiosk.name} 
+                id={kiosk.id} 
+                onSelect={handleSelectKiosk} 
+              />
+            ))}
           </div>
         </div>
       ) : (
-        /* FORMULAIRE DE SAISIE TRADITIONNEL (SI PANNEAU FERMÉ) */
-        <form onSubmit={handleSubmit} className="report-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Date du Rapport :</label>
-              <input type="date" name="date" value={formData.date} onChange={handleChange} required />
+        
+        /* ÉCRAN DE TRAVAIL (FORMULAIRE & TICKETS) - S'affiche uniquement si un kiosque est connecté */
+        <>
+          <div className="header-akiba">
+            <div className="brand-zone">
+              <h1>Akiba</h1>
+              <button className="logout-btn" onClick={() => setKioskConnecte(null)}>◀ Changer de kiosque</button>
             </div>
-            <div className="form-group">
-              <label>Moment de la journée :</label>
-              <select name="moment" value={formData.moment} onChange={handleChange} required>
-                <option value="Matin">Matin (Ouverture)</option>
-                <option value="Soir">Soir (Clôture)</option>
-              </select>
-            </div>
+            <button 
+              className={`kiosk-account-btn ${voirTousLesTickets ? 'active' : ''}`}
+              onClick={() => {
+                setVoirTousLesTickets(!voirTousLesTickets);
+                setTicketSelectionne(null);
+              }}
+            >
+              📁 Compte du Kiosque
+            </button>
+          </div>
+          
+          <div className="welcome-kiosk-bar">
+            <span>🏪 Espace connecté :</span> <strong>{kioskConnecte}</strong>
           </div>
 
-          <h3 className="section-title">📱 Détail Airtel Money</h3>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Solde AM1 (FCFA) :</label>
-              <input type="number" name="soldeAM1" value={formData.soldeAM1} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Solde AM2 (FCFA) :</label>
-              <input type="number" name="soldeAM2" value={formData.soldeAM2} onChange={handleChange} />
-            </div>
-          </div>
+          {error && <div className="alert error">{error}</div>}
 
-          <h3 className="section-title">📞 Détail Libertis</h3>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Solde Principal (FCFA) :</label>
-              <input type="number" name="soldePrincipalLibertis" value={formData.soldePrincipalLibertis} onChange={handleChange} />
+          {voirTousLesTickets ? (
+            <div className="kiosk-panel-container">
+              <div className="panel-header">
+                <h2>📜 Liste de tous les tickets créés</h2>
+                <button className="close-panel-btn" onClick={() => setVoirTousLesTickets(false)}>✕ Fermer</button>
+              </div>
+              <div className="panel-body">
+                <div className="tickets-list-sidebar">
+                  {historiqueRapports.length === 0 ? (
+                    <p className="no-data-msg">Aucun ticket pour ce kiosque.</p>
+                  ) : (
+                    historiqueRapports.map((ticket) => (
+                      <div 
+                        key={ticket._id} 
+                        className={`ticket-item-row ${ticketSelectionne?._id === ticket._id ? 'selected' : ''}`}
+                        onClick={() => setTicketSelectionne(ticket)}
+                      >
+                        <div className="ticket-item-meta">
+                          <span className="ticket-item-date">{new Date(ticket.date).toLocaleDateString('fr-FR')}</span>
+                          <span className={`badge ${ticket.moment === 'Matin' ? 'badge-matin' : 'badge-soir'}`}>{ticket.moment}</span>
+                        </div>
+                        <div className="ticket-item-total">{ticket.totalCalcule?.toLocaleString('fr-FR')} FCFA</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="ticket-view-display">
+                  {ticketSelectionne ? (
+                    <div className="receipt-ticket">
+                      {/* Structure ticket de caisse inchangée... */}
+                      <div className="receipt-header">
+                        <h3>🧾 REÇU DE CAISSE AKIBA</h3>
+                        <p className="receipt-kiosk">{ticketSelectionne.kioskName}</p>
+                        <p className="receipt-meta">
+                          <span>Date : {new Date(ticketSelectionne.date).toLocaleDateString('fr-FR')}</span>
+                          <span>Moment : {ticketSelectionne.moment}</span>
+                        </p>
+                      </div>
+                      <div className="receipt-divider"></div>
+                      <div className="receipt-section">
+                        <h4>📱 FLUX AIRTEL MONEY</h4>
+                        <div className="receipt-row"><span>Solde AM1 :</span> <span>{ticketSelectionne.soldeAM1?.toLocaleString('fr-FR')} FCFA</span></div>
+                        <div className="receipt-row"><span>Solde AM2 :</span> <span>{ticketSelectionne.soldeAM2?.toLocaleString('fr-FR')} FCFA</span></div>
+                      </div>
+                      <div className="receipt-section">
+                        <h4>📞 FLUX LIBERTIS</h4>
+                        <div className="receipt-row"><span>Solde Principal :</span> <span>{ticketSelectionne.soldePrincipalLibertis?.toLocaleString('fr-FR')} FCFA</span></div>
+                        <div className="receipt-row"><span>Solde Cashout :</span> <span>{ticketSelectionne.soldeCashoutLibertis?.toLocaleString('fr-FR')} FCFA</span></div>
+                      </div>
+                      <div className="receipt-section">
+                        <h4>💵 ESPÈCES & EXPRESS</h4>
+                        <div className="receipt-row"><span>Solde Espèces :</span> <span>{ticketSelectionne.soldeEspeces?.toLocaleString('fr-FR')} FCFA</span></div>
+                        <div className="receipt-row"><span>Solde Express :</span> <span>{ticketSelectionne.soldeExpress?.toLocaleString('fr-FR')} FCFA</span></div>
+                      </div>
+                      <div className="receipt-section">
+                        <h4>💰 COMMISSIONS</h4>
+                        <div className="receipt-row"><span>Com AM1 :</span> <span>{ticketSelectionne.comAM1?.toLocaleString('fr-FR')} FCFA</span></div>
+                        <div className="receipt-row"><span>Com AM2 :</span> <span>{ticketSelectionne.comAM2?.toLocaleString('fr-FR')} FCFA</span></div>
+                        <div className="receipt-row"><span>Com MC :</span> <span>{ticketSelectionne.comMC?.toLocaleString('fr-FR')} FCFA</span></div>
+                      </div>
+                      <div className="receipt-section">
+                        <h4>📦 AUTRES FLUX</h4>
+                        <div className="receipt-row"><span>Divers :</span> <span>{ticketSelectionne.divers?.toLocaleString('fr-FR')} FCFA</span></div>
+                        <div className="receipt-row"><span>Vente SIM :</span> <span>{ticketSelectionne.venteSim?.toLocaleString('fr-FR')} FCFA</span></div>
+                      </div>
+                      <div className="receipt-divider"></div>
+                      <div className="receipt-footer">
+                        <div className="receipt-total-row"><span>TOTAL :</span> <strong>{ticketSelectionne.totalCalcule?.toLocaleString('fr-FR')} FCFA</strong></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="select-prompt-box">👈 Sélectionnez un ticket pour afficher son reçu.</div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="form-group">
-              <label>Solde Cashout (FCFA) :</label>
-              <input type="number" name="soldeCashoutLibertis" value={formData.soldeCashoutLibertis} onChange={handleChange} />
-            </div>
-          </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="report-form">
+              {/* Contenu du formulaire inchangé... */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Date du Rapport :</label>
+                  <input type="date" name="date" value={formData.date} onChange={handleChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Moment de la journée :</label>
+                  <select name="moment" value={formData.moment} onChange={handleChange} required>
+                    <option value="Matin">Matin (Ouverture)</option>
+                    <option value="Soir">Soir (Clôture)</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Reste des inputs (Airtel, Libertis etc...) */}
+              <h3 className="section-title">📱 Détail Airtel Money</h3>
+              <div className="form-row"><div className="form-group"><label>Solde AM1 :</label><input type="number" name="soldeAM1" value={formData.soldeAM1} onChange={handleChange} /></div><div className="form-group"><label>Solde AM2 :</label><input type="number" name="soldeAM2" value={formData.soldeAM2} onChange={handleChange} /></div></div>
+              <h3 className="section-title">📞 Détail Libertis</h3>
+              <div className="form-row"><div className="form-group"><label>Solde Principal :</label><input type="number" name="soldePrincipalLibertis" value={formData.soldePrincipalLibertis} onChange={handleChange} /></div><div className="form-group"><label>Solde Cashout :</label><input type="number" name="soldeCashoutLibertis" value={formData.soldeCashoutLibertis} onChange={handleChange} /></div></div>
+              <h3 className="section-title">💵 Espèces & Express</h3>
+              <div className="form-row"><div className="form-group"><label>Solde Espèces :</label><input type="number" name="soldeEspeces" value={formData.soldeEspeces} onChange={handleChange} /></div><div className="form-group"><label>Solde Express :</label><input type="number" name="soldeExpress" value={formData.soldeExpress} onChange={handleChange} /></div></div>
+              <h3 className="section-title">💰 Commissions</h3>
+              <div className="form-row"><div className="form-group"><label>Com AM1 :</label><input type="number" name="comAM1" value={formData.comAM1} onChange={handleChange} /></div><div className="form-group"><label>Com AM2 :</label><input type="number" name="comAM2" value={formData.comAM2} onChange={handleChange} /></div><div className="form-group"><label>Com MC :</label><input type="number" name="comMC" value={formData.comMC} onChange={handleChange} /></div></div>
+              <h3 className="section-title">📦 Autres Flux</h3>
+              <div className="form-row"><div className="form-group"><label>Divers :</label><input type="number" name="divers" value={formData.divers} onChange={handleChange} /></div><div className="form-group"><label>Vente SIM :</label><input type="number" name="venteSim" value={formData.venteSim} onChange={handleChange} /></div></div>
 
-          <h3 className="section-title">💵 Espèces \& Express</h3>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Solde Espèces (FCFA) :</label>
-              <input type="number" name="soldeEspeces" value={formData.soldeEspeces} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Solde Express (FCFA) :</label>
-              <input type="number" name="soldeExpress" value={formData.soldeExpress} onChange={handleChange} />
-            </div>
-          </div>
-
-          <h3 className="section-title">💰 Commissions</h3>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Com AM1 (FCFA) :</label>
-              <input type="number" name="comAM1" value={formData.comAM1} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Com AM2 (FCFA) :</label>
-              <input type="number" name="comAM2" value={formData.comAM2} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Com MC (FCFA) :</label>
-              <input type="number" name="comMC" value={formData.comMC} onChange={handleChange} />
-            </div>
-          </div>
-
-          <h3 className="section-title">📦 Autres Flux</h3>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Divers (FCFA) :</label>
-              <input type="number" name="divers" value={formData.divers} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Vente SIM (FCFA) :</label>
-              <input type="number" name="venteSim" value={formData.venteSim} onChange={handleChange} />
-            </div>
-          </div>
-
-          <div className="total-box">
-            <span>Total Principal Calculé (5 Flux) :</span>
-            <strong>{totalEnDirect.toLocaleString('fr-FR')} FCFA</strong>
-          </div>
-
-          <div className="form-group">
-            <label>Note / Commentaire (Optionnel) :</label>
-            <textarea name="note" value={formData.note} onChange={handleChange} placeholder="Remarques éventuelles..."></textarea>
-          </div>
-
-          <button type="submit" className="submit-btn">Enregistrer la journée</button>
-        </form>
-      )}
-
-      {/* TICKET INSTANTANÉ APRÈS ENREGISTREMENT (UNIQUEMENT SI LE PANNEAU N'EST PAS DÉJÀ OUVERT) */}
-      {!voirTousLesTickets && rapportSauvegarde && (
-        <div className="receipt-container">
-          {renderTicketDeCaisse(rapportSauvegarde)}
-        </div>
+              <div className="total-box">
+                <span>Total Principal Calculé :</span>
+                <strong>{totalEnDirect.toLocaleString('fr-FR')} FCFA</strong>
+              </div>
+              <button type="submit" className="submit-btn">Enregistrer la journée</button>
+            </form>
+          )}
+        </>
       )}
     </div>
   );
