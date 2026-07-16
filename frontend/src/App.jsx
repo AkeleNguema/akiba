@@ -12,7 +12,7 @@ function App() {
   ];
 
   const [kioskConnecte, setKioskConnecte] = useState(null); 
-  const [kioskEnCoursDeConnexion, setKioskEnCoursDeConnexion] = useState(null); // 🆕 Stocke le kiosque sélectionné pour le PIN
+  const [kioskEnCoursDeConnexion, setKioskEnCoursDeConnexion] = useState(null); // Stocke le kiosque sélectionné pour le PIN
   const [voirTousLesTickets, setVoirTousLesTickets] = useState(false);
   const [ticketSelectionne, setTicketSelectionne] = useState(null);
   const [historiqueRapports, setHistoriqueRapports] = useState([]);
@@ -57,20 +57,31 @@ function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 🆕 Clic sur une carte : on ouvre d'abord le pop-up en stockant le kiosque cible
+  // Clic sur une carte : on ouvre d'abord le pop-up en stockant le kiosque cible
   const handleSelectKiosk = (name, id) => {
     setKioskEnCoursDeConnexion({ name, id });
   };
 
-  // 🆕 Soumission du code PIN dans le pop-up
-  const handlePinSubmit = (pinEntered) => {
-    // Étape transitoire de test : on accepte le code "1234" pour tous les kiosques
-    if (pinEntered === '1234') {
-      setKioskConnecte(kioskEnCoursDeConnexion.name);
-      setKioskEnCoursDeConnexion(null); // Ferme le modal
-    } else {
-      // Pour l'instant on alerte, mais le LoginModal gérera ses erreurs de manière fluide
-      alert('Code PIN incorrect ! (Essayez "1234")');
+  // 🆕 Soumission du code PIN en direct avec le Backend
+  const handlePinSubmit = async (pinEntered) => {
+    try {
+      setError(null);
+
+      // Requête de vérification au serveur
+      const response = await axios.post('http://127.0.0.1:5000/api/auth/verify-pin', {
+        kioskId: kioskEnCoursDeConnexion.id,
+        pin: pinEntered
+      });
+
+      if (response.data.success) {
+        // Connexion réussie : On connecte le kiosque et ferme le modal
+        setKioskConnecte(response.data.kiosk.name);
+        setKioskEnCoursDeConnexion(null);
+      }
+    } catch (err) {
+      // Récupération de l'erreur renvoyée par le backend (ex: "Code PIN incorrect.")
+      const errorMessage = err.response?.data?.message || "Impossible de joindre le serveur.";
+      alert(errorMessage);
     }
   };
 
@@ -273,7 +284,7 @@ function App() {
         </>
       )}
 
-      {/* 🆕 Rendu du LoginModal s'il y a un kiosque en cours de connexion */}
+      {/* Rendu du LoginModal s'il y a un kiosque en cours de connexion */}
       {kioskEnCoursDeConnexion && (
         <LoginModal
           kioskName={kioskEnCoursDeConnexion.name}

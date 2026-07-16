@@ -10,19 +10,21 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 20px;
+    padding: 15px; /* Réduit pour laisser de l'espace sur les petits écrans */
+    box-sizing: border-box;
   }
   
   .modal-content {
     background: #ffffff;
-    padding: 30px;
+    padding: 24px 20px; /* Plus compact */
     border-radius: 20px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     width: 100%;
-    max-width: 400px;
+    max-width: 360px; /* Réduit pour s'adapter aux petits écrans */
     position: relative;
     text-align: center;
     border: 1px solid #e2e8f0;
+    box-sizing: border-box;
   }
   
   .animate-pop {
@@ -42,11 +44,11 @@
   
   .modal-close-corner {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 12px;
+    right: 12px;
     background: none;
     border: none;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #94a3b8;
     cursor: pointer;
     transition: color 0.2s;
@@ -57,62 +59,70 @@
   }
   
   .modal-icon {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+  }
+  
+  .modal-content h2 {
+    font-size: 1.3rem; /* Légèrement plus petit sur mobile */
+    margin: 5px 0;
   }
   
   .modal-subtitle {
     color: #64748b;
-    font-size: 0.95rem;
+    font-size: 0.85rem; /* Ajusté */
     margin-top: 5px;
+    padding: 0 10px;
   }
   
   .pin-inputs-container {
     display: flex;
     justify-content: center;
-    gap: 15px;
-    margin: 30px 0;
+    gap: 10px; /* Moins d'espace pour que ça tienne en largeur */
+    margin: 20px 0;
   }
   
   .pin-box {
-    width: 55px;
-    height: 65px;
+    width: 46px; /* Réduit de 55px à 46px */
+    height: 56px; /* Réduit de 65px à 56px */
     border: 2px solid #cbd5e1;
-    border-radius: 12px;
-    font-size: 1.8rem;
+    border-radius: 10px;
+    font-size: 1.5rem; /* Taille de police harmonisée */
     font-weight: bold;
     text-align: center;
     color: #1e293b;
     outline: none;
     transition: all 0.2s;
+    box-sizing: border-box;
   }
   
   .pin-box:focus {
-    border-color: #ff4747; /* Notre rouge Akiba ! */
+    border-color: #ff4747; /* Rouge Akiba */
     box-shadow: 0 0 0 4px rgba(255, 71, 71, 0.15);
   }
   
   .modal-error-message {
     color: #ef4444;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin-bottom: 15px;
     font-weight: 500;
   }
   
   .modal-actions {
     display: flex;
-    gap: 12px;
+    gap: 10px;
   }
   
   .btn-cancel {
     flex: 1;
-    padding: 12px;
+    padding: 10px; /* Bouton plus compact */
     border: 1px solid #cbd5e1;
     background: #f8fafc;
     color: #475569;
     border-radius: 10px;
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: background 0.2s;
   }
@@ -122,17 +132,30 @@
   }
   
   .btn-submit {
-    flex: 2;
-    padding: 12px;
+    flex: 1.8;
+    padding: 10px; /* Bouton plus compact */
     border: none;
     background: #ff4747; /* Rouge Akiba */
     color: white;
     border-radius: 10px;
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: background 0.2s;
   }
   
   .btn-submit:hover {
     background: #e03232;
+  }
+  
+  /* 📱 Ajustements extrêmes pour les très petits écrans (ex: iPhone SE / 320px) */
+  @media (max-width: 350px) {
+    .pin-box {
+      width: 40px;
+      height: 50px;
+      font-size: 1.3rem;
+    }
+    .pin-inputs-container {
+      gap: 8px;
+    }
   }
