@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import KioskCard from './components/KioskCard'; // Import du nouveau composant
+import KioskCard from './components/KioskCard';
+import LoginModal from './components/LoginModal'; 
 import './App.css';
 
 function App() {
-  // Liste temporaire des kiosques (sera gérée par l'admin via la BDD plus tard)
   const kiosksData = [
     { id: 'akibacharbonnage', name: 'Kiosque Charbonnages' },
     { id: 'akibaalibandeng', name: 'Kiosque Alibandeng' },
     { id: 'akibaokala', name: 'Kiosque Ondogo' }
   ];
 
-  const [kioskConnecte, setKioskConnecte] = useState(null); // `null` signifie qu'aucun kiosque n'est choisi au départ
+  const [kioskConnecte, setKioskConnecte] = useState(null); 
+  const [kioskEnCoursDeConnexion, setKioskEnCoursDeConnexion] = useState(null); // 🆕 Stocke le kiosque sélectionné pour le PIN
   const [voirTousLesTickets, setVoirTousLesTickets] = useState(false);
   const [ticketSelectionne, setTicketSelectionne] = useState(null);
   const [historiqueRapports, setHistoriqueRapports] = useState([]);
@@ -28,7 +29,6 @@ function App() {
 
   const [totalEnDirect, setTotalEnDirect] = useState(0);
 
-  // Charger l'historique uniquement si un kiosque est connecté
   const chargerHistorique = async () => {
     if (!kioskConnecte) return;
     try {
@@ -57,9 +57,21 @@ function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // 🆕 Clic sur une carte : on ouvre d'abord le pop-up en stockant le kiosque cible
   const handleSelectKiosk = (name, id) => {
-    // Étape transitoire : On connecte directement le kiosque au clic
-    setKioskConnecte(name);
+    setKioskEnCoursDeConnexion({ name, id });
+  };
+
+  // 🆕 Soumission du code PIN dans le pop-up
+  const handlePinSubmit = (pinEntered) => {
+    // Étape transitoire de test : on accepte le code "1234" pour tous les kiosques
+    if (pinEntered === '1234') {
+      setKioskConnecte(kioskEnCoursDeConnexion.name);
+      setKioskEnCoursDeConnexion(null); // Ferme le modal
+    } else {
+      // Pour l'instant on alerte, mais le LoginModal gérera ses erreurs de manière fluide
+      alert('Code PIN incorrect ! (Essayez "1234")');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -101,7 +113,6 @@ function App() {
     }
   };
 
-  // RENDU VISUEL
   return (
     <div className="app-container">
       
@@ -261,6 +272,16 @@ function App() {
           )}
         </>
       )}
+
+      {/* 🆕 Rendu du LoginModal s'il y a un kiosque en cours de connexion */}
+      {kioskEnCoursDeConnexion && (
+        <LoginModal
+          kioskName={kioskEnCoursDeConnexion.name}
+          onClose={() => setKioskEnCoursDeConnexion(null)}
+          onConfirm={handlePinSubmit}
+        />
+      )}
+
     </div>
   );
 }
