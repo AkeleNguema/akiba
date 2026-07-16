@@ -8,7 +8,7 @@ function App() {
   const kiosksData = [
     { id: 'akibacharbonnage', name: 'Kiosque Charbonnages' },
     { id: 'akibaalibandeng', name: 'Kiosque Alibandeng' },
-    { id: 'akibaokala', name: 'Kiosque Ondogo' }
+    { id: 'akibaondogo', name: 'Kiosque Ondogo' }
   ];
 
   const [kioskConnecte, setKioskConnecte] = useState(null); 
@@ -29,12 +29,18 @@ function App() {
 
   const [totalEnDirect, setTotalEnDirect] = useState(0);
 
+  // 🆕 Récupère uniquement les rapports du kiosque connecté via l'API
   const chargerHistorique = async () => {
     if (!kioskConnecte) return;
+    
+    // Trouver l'identifiant technique (id) du kiosque connecté
+    const currentKiosk = kiosksData.find(k => k.name === kioskConnecte);
+    if (!currentKiosk) return;
+
     try {
-      const response = await axios.get('http://127.0.0.1:5000/api/reports');
-      const rapportsDuKiosque = response.data.filter(r => r.kioskName === kioskConnecte);
-      setHistoriqueRapports(rapportsDuKiosque);
+      // On passe le kioskId en paramètre de requête (Query Param)
+      const response = await axios.get(`http://127.0.0.1:5000/api/reports?kioskId=${currentKiosk.id}`);
+      setHistoriqueRapports(response.data);
     } catch (err) {
       console.error("Erreur lors du chargement de l'historique :", err);
     }
@@ -62,7 +68,7 @@ function App() {
     setKioskEnCoursDeConnexion({ name, id });
   };
 
-  // 🆕 Soumission du code PIN en direct avec le Backend
+  // Soumission du code PIN en direct avec le Backend
   const handlePinSubmit = async (pinEntered) => {
     try {
       setError(null);
@@ -85,14 +91,18 @@ function App() {
     }
   };
 
+  // 🆕 Soumission du formulaire lié au kiosque
   const handleSubmit = async (e) => {
     e.preventDefault();
     setRapportSauvegarde(null);
     setError(null);
 
+    // Récupérer l'identifiant technique du kiosque connecté
+    const currentKiosk = kiosksData.find(k => k.name === kioskConnecte);
+
     try {
       const response = await axios.post('http://127.0.0.1:5000/api/reports', {
-        kioskName: kioskConnecte,
+        kioskId: currentKiosk?.id, // 🆕 Liaison via l'ID technique
         date: formData.date,
         moment: formData.moment,
         soldeAM1: Number(formData.soldeAM1) || 0,

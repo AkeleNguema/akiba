@@ -1,7 +1,12 @@
-// Model DailyReport.js
 const mongoose = require('mongoose');
 
 const DailyReportSchema = new mongoose.Schema({
+    
+    kiosk: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Kiosk',
+        required: [true, "La référence du kiosque est obligatoire"]
+    },
     kioskName: {
         type: String,
         required: [true, "Le nom du kiosque est obligatoire"],
@@ -36,5 +41,16 @@ const DailyReportSchema = new mongoose.Schema({
     totalCalcule: { type: Number, default: 0 },
     note: { type: String, trim: true }
 }, { timestamps: true });
+
+// Calcul automatique du total avant sauvegarde
+DailyReportSchema.pre('save', function (next) {
+    this.totalCalcule = 
+        (this.soldeAM1 || 0) + 
+        (this.soldeAM2 || 0) + 
+        (this.soldePrincipalLibertis || 0) + 
+        (this.soldeCashoutLibertis || 0) + 
+        (this.soldeExpress || 0);
+    next();
+});
 
 module.exports = mongoose.model('DailyReport', DailyReportSchema);

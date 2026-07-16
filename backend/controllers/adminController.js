@@ -16,10 +16,10 @@ exports.seedKiosks = async (req, res) => {
       { 
         id: 'akibaalibandeng', 
         name: 'Kiosque Alibandeng', 
-        pin: '5678' 
+        pin: '0700' 
       },
       { 
-        id: 'akibaokala', 
+        id: 'akibaondogo', 
         name: 'Kiosque Ondogo', 
         pin: '7128' 
       }
