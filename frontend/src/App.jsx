@@ -21,24 +21,21 @@ function App() {
   const [error, setError] = useState(null);
   const [rapportSauvegarde, setRapportSauvegarde] = useState(null);
 
+  // Initialisation des valeurs financières à 0 pour éviter les bugs de rendu
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     moment: 'Soir',
-    soldeAM1: '', soldeAM2: '', soldePrincipalLibertis: '', soldeCashoutLibertis: '',
-    soldeExpress: '', soldeEspeces: '', venteSim: '', divers: '',
-    comAM1: '', comAM2: '', comMC: '', note: ''
+    soldeAM1: 0, soldeAM2: 0, soldePrincipalLibertis: 0, soldeCashoutLibertis: 0,
+    soldeExpress: 0, soldeEspeces: 0, venteSim: 0, divers: 0,
+    comAM1: 0, comAM2: 0, comMC: 0, note: ''
   });
 
-  // Récupère l'historique directement avec l'ID unique du kiosque connecté
+  // Récupère l'historique directement avec l'ID unique du kiosque connecté (sans try-catch)
   const chargerHistorique = async () => {
     if (!kioskConnecteId) return;
 
-    try {
-      const response = await axios.get(`http://127.0.0.1:5000/api/reports?kioskId=${kioskIdTechnique}`);
-      setHistoriqueRapports(response.data);
-    } catch (err) {
-      console.error("Erreur lors du chargement de l'historique :", err);
-    }
+    const response = await axios.get(`https://akiba-bb4r.onrender.com/api/reports?kioskId=${kioskIdTechnique}`);
+    setHistoriqueRapports(response.data);
   };
 
   useEffect(() => {
@@ -50,7 +47,7 @@ function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
- // ✅ CALCUL DU TOTAL SYNCHRONE ET PROPRE
+  // Calcul du total synchrone et propre
   const calculerTotal = () => {
     const am1 = Number(formData.soldeAM1) || 0;
     const am2 = Number(formData.soldeAM2) || 0;
@@ -67,68 +64,58 @@ function App() {
     setKioskEnCoursDeConnexion({ name, id });
   };
 
-  // Soumission du code PIN en direct avec le Backend
+  // Soumission du code PIN en direct avec le Backend (sans try-catch)
   const handlePinSubmit = async (pinEntered) => {
-    try {
-      setError(null);
+    setError(null);
 
-      // Requête de vérification au serveur
-      const response = await axios.post('http://127.0.0.1:5000/api/auth/verify-pin', {
-        kioskId: kioskEnCoursDeConnexion.id,
-        pin: pinEntered
-      });
+    const response = await axios.post('https://akiba-bb4r.onrender.com/api/auth/verify-pin', {
+      kioskId: kioskEnCoursDeConnexion.id,
+      pin: pinEntered
+    });
 
-      if (response.data.success) {
-        // Connexion réussie : On enregistre les données de session
-        setKioskConnecte(response.data.kiosk.name);
-        setKioskConnecteId(response.data.kiosk._id); // Vrai _id MongoDB
-        setKioskIdTechnique(response.data.kiosk.id); // Sauvegarde de l'id technique (ex: 'akibacharbonnage')
-        setKioskEnCoursDeConnexion(null);
-      }
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || "Impossible de joindre le serveur.";
-      alert(errorMessage);
+    if (response.data.success) {
+      setKioskConnecte(response.data.kiosk.name);
+      setKioskConnecteId(response.data.kiosk._id); // Vrai _id MongoDB
+      setKioskIdTechnique(response.data.kiosk.id); // Sauvegarde de l'id technique
+      setKioskEnCoursDeConnexion(null);
     }
   };
 
-  // Soumission du formulaire de rapport
+  // Soumission du formulaire de rapport (sans try-catch)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setRapportSauvegarde(null);
     setError(null);
 
-    try {
-      const response = await axios.post('http://127.0.0.1:5000/api/reports', {
-        kioskId: kioskIdTechnique, // Envoie la bonne référence textuelle stable
-        date: formData.date,
-        moment: formData.moment,
-        soldeAM1: Number(formData.soldeAM1) || 0,
-        soldeAM2: Number(formData.soldeAM2) || 0,
-        soldePrincipalLibertis: Number(formData.soldePrincipalLibertis) || 0,
-        soldeCashoutLibertis: Number(formData.soldeCashoutLibertis) || 0,
-        soldeExpress: Number(formData.soldeExpress) || 0,
-        soldeEspeces: Number(formData.soldeEspeces) || 0,
-        venteSim: Number(formData.venteSim) || 0,
-        divers: Number(formData.divers) || 0,
-        comAM1: Number(formData.comAM1) || 0,
-        comAM2: Number(formData.comAM2) || 0,
-        comMC: Number(formData.comMC) || 0,
-        note: formData.note
-      });
+    const response = await axios.post('https://akiba-bb4r.onrender.com/api/reports', {
+      kioskId: kioskIdTechnique,
+      date: formData.date,
+      moment: formData.moment,
+      soldeAM1: Number(formData.soldeAM1) || 0,
+      soldeAM2: Number(formData.soldeAM2) || 0,
+      soldePrincipalLibertis: Number(formData.soldePrincipalLibertis) || 0,
+      soldeCashoutLibertis: Number(formData.soldeCashoutLibertis) || 0,
+      soldeExpress: Number(formData.soldeExpress) || 0,
+      soldeEspeces: Number(formData.soldeEspeces) || 0,
+      venteSim: Number(formData.venteSim) || 0,
+      divers: Number(formData.divers) || 0,
+      comAM1: Number(formData.comAM1) || 0,
+      comAM2: Number(formData.comAM2) || 0,
+      comMC: Number(formData.comMC) || 0,
+      note: formData.note
+    });
 
-      setRapportSauvegarde(response.data);
-      if (voirTousLesTickets) setTicketSelectionne(response.data);
-      chargerHistorique();
-      
-      setFormData({
-        ...formData,
-        soldeAM1: '', soldeAM2: '', soldePrincipalLibertis: '', soldeCashoutLibertis: '',
-        soldeExpress: '', soldeEspeces: '', venteSim: '', divers: '',
-        comAM1: '', comAM2: '', comMC: '', note: ''
-      });
-    } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || "Erreur de connexion.");
-    }
+    setRapportSauvegarde(response.data);
+    if (voirTousLesTickets) setTicketSelectionne(response.data);
+    chargerHistorique();
+    
+    setFormData({
+      date: new Date().toISOString().split('T')[0],
+      moment: 'Soir',
+      soldeAM1: 0, soldeAM2: 0, soldePrincipalLibertis: 0, soldeCashoutLibertis: 0,
+      soldeExpress: 0, soldeEspeces: 0, venteSim: 0, divers: 0,
+      comAM1: 0, comAM2: 0, comMC: 0, note: ''
+    });
   };
 
   return (
@@ -287,33 +274,33 @@ function App() {
               
               <h3 className="section-title">📱 Détail Airtel Money</h3>
               <div className="form-row">
-                <div className="form-group"><label>Solde AM1 :</label><input type="number" name="soldeAM1" value={formData.soldeAM1} onChange={handleChange} /></div>
-                <div className="form-group"><label>Solde AM2 :</label><input type="number" name="soldeAM2" value={formData.soldeAM2} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde AM1 :</label><input type="number" name="soldeAM1" value={formData.soldeAM1 === 0 ? '' : formData.soldeAM1} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde AM2 :</label><input type="number" name="soldeAM2" value={formData.soldeAM2 === 0 ? '' : formData.soldeAM2} onChange={handleChange} /></div>
               </div>
               
               <h3 className="section-title">📞 Détail Libertis</h3>
               <div className="form-row">
-                <div className="form-group"><label>Solde Principal :</label><input type="number" name="soldePrincipalLibertis" value={formData.soldePrincipalLibertis} onChange={handleChange} /></div>
-                <div className="form-group"><label>Solde Cashout :</label><input type="number" name="soldeCashoutLibertis" value={formData.soldeCashoutLibertis} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde Principal :</label><input type="number" name="soldePrincipalLibertis" value={formData.soldePrincipalLibertis === 0 ? '' : formData.soldePrincipalLibertis} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde Cashout :</label><input type="number" name="soldeCashoutLibertis" value={formData.soldeCashoutLibertis === 0 ? '' : formData.soldeCashoutLibertis} onChange={handleChange} /></div>
               </div>
               
               <h3 className="section-title">💵 Espèces & Express</h3>
               <div className="form-row">
-                <div className="form-group"><label>Solde Espèces :</label><input type="number" name="soldeEspeces" value={formData.soldeEspeces} onChange={handleChange} /></div>
-                <div className="form-group"><label>Solde Express :</label><input type="number" name="soldeExpress" value={formData.soldeExpress} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde Espèces :</label><input type="number" name="soldeEspeces" value={formData.soldeEspeces === 0 ? '' : formData.soldeEspeces} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde Express :</label><input type="number" name="soldeExpress" value={formData.soldeExpress === 0 ? '' : formData.soldeExpress} onChange={handleChange} /></div>
               </div>
               
               <h3 className="section-title">💰 Commissions</h3>
               <div className="form-row">
-                <div className="form-group"><label>Com AM1 :</label><input type="number" name="comAM1" value={formData.comAM1} onChange={handleChange} /></div>
-                <div className="form-group"><label>Com AM2 :</label><input type="number" name="comAM2" value={formData.comAM2} onChange={handleChange} /></div>
-                <div className="form-group"><label>Com MC :</label><input type="number" name="comMC" value={formData.comMC} onChange={handleChange} /></div>
+                <div className="form-group"><label>Com AM1 :</label><input type="number" name="comAM1" value={formData.comAM1 === 0 ? '' : formData.comAM1} onChange={handleChange} /></div>
+                <div className="form-group"><label>Com AM2 :</label><input type="number" name="comAM2" value={formData.comAM2 === 0 ? '' : formData.comAM2} onChange={handleChange} /></div>
+                <div className="form-group"><label>Com MC :</label><input type="number" name="comMC" value={formData.comMC === 0 ? '' : formData.comMC} onChange={handleChange} /></div>
               </div>
               
               <h3 className="section-title">📦 Autres Flux</h3>
               <div className="form-row">
-                <div className="form-group"><label>Divers :</label><input type="number" name="divers" value={formData.divers} onChange={handleChange} /></div>
-                <div className="form-group"><label>Vente SIM :</label><input type="number" name="venteSim" value={formData.venteSim} onChange={handleChange} /></div>
+                <div className="form-group"><label>Divers :</label><input type="number" name="divers" value={formData.divers === 0 ? '' : formData.divers} onChange={handleChange} /></div>
+                <div className="form-group"><label>Vente SIM :</label><input type="number" name="venteSim" value={formData.venteSim === 0 ? '' : formData.venteSim} onChange={handleChange} /></div>
               </div>
 
               <h3 className="section-title">📝 Note / Observation</h3>
@@ -339,13 +326,12 @@ function App() {
                 </div>
               </div>
 
-              {/* ✅ APPEL DE LA FONCTION DE CALCUL EN HAUT DU CODE */}
+              {/* ✅ AFFICHAGE SÉCURISÉ CONTRE LES TRADUCTEURS DE NAVIGATEUR */}
               <div className="total-box">
                 <span>Total Principal Calculé :</span>
                 <strong className="notranslate" translate="no">
-                {calculerTotal()}
+                  {calculerTotal()}
                 </strong>
-                
               </div>
               <button type="submit" className="submit-btn">Enregistrer la journée</button>
             </form>
