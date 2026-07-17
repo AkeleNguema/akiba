@@ -1,7 +1,11 @@
+// ✅ 1. On charge dotenv UNIQUEMENT si on n'est pas en production sur Render
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
+
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose'); // Mongoose est importé en premier !
-require('dotenv').config();
+const mongoose = require('mongoose'); 
 
 // On importe le modèle Kiosk après l'initialisation de mongoose
 const Kiosk = require('./models/Kiosk'); 
@@ -21,9 +25,15 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 
-// Connexion à MongoDB Atlas et initialisation automatique
+// ✅ 2. On récupère la variable d'environnement système
 const uri = process.env.MONGO_URI;
 
+if (!uri) {
+    console.error("❌ ERREUR CRITIQUE : La variable MONGO_URI n'est pas définie dans l'environnement !");
+    process.exit(1); // Arrête le processus pour éviter les boucles de timeouts
+}
+
+// Connexion à MongoDB Atlas et initialisation automatique
 mongoose.connect(uri)
     .then(async () => {
         console.log("Connexion réussie à MongoDB Atlas ! 🍃");
@@ -34,9 +44,9 @@ mongoose.connect(uri)
             if (count === 0) {
                 console.log("🏪 Base de données vide. Initialisation automatique des kiosques...");
                 const defaultKiosks = [
-                    { id: 'akibacharbonnage', name: 'Kiosque Charbonnages', pin: '2025' }, // ✅ Utilisation de "id" obligatoire
-                    { id: 'akibaalibandeng', name: 'Kiosque Alibandeng', pin: '0700' },    // ✅ Utilisation de "id" obligatoire
-                    { id: 'akibaondogo', name: 'Kiosque Ondogo', pin: '7128' }         // ✅ Utilisation de "id" obligatoire
+                    { id: 'akibacharbonnage', name: 'Kiosque Charbonnages', pin: '2025' }, 
+                    { id: 'akibaalibandeng', name: 'Kiosque Alibandeng', pin: '0700' },    
+                    { id: 'akibaondogo', name: 'Kiosque Ondogo', pin: '7128' }         
                 ];
                 await Kiosk.create(defaultKiosks);
                 console.log("✅ Les 3 kiosques ont été créés avec succès !");
