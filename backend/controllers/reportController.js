@@ -5,7 +5,7 @@ const Kiosk = require('../models/Kiosk');
 exports.createReport = async (req, res) => {
   try {
     const { 
-      kioskId, // 🆕 Reçu depuis le frontend suite à la connexion
+      kioskId, // Reçu depuis le frontend suite à la connexion
       date, 
       moment, 
       soldeAM1, 
@@ -22,19 +22,27 @@ exports.createReport = async (req, res) => {
       note 
     } = req.body;
 
-    // 🆕 Trouver le kiosque pour récupérer sa référence unique (_id)
+    // 🛡️ SÉCURITÉ 1 : Vérifier si kioskId est bien fourni par le frontend
+    if (!kioskId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "L'identifiant du kiosque (kioskId) est obligatoire pour enregistrer un rapport." 
+      });
+    }
+
+    // 🛡️ SÉCURITÉ 2 : Trouver le kiosque dans MongoDB Atlas pour récupérer son _id et son name
     const kiosk = await Kiosk.findOne({ id: kioskId });
     if (!kiosk) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Kiosque introuvable. Impossible d\'enregistrer le rapport.' 
+        message: `Kiosque introuvable en base de données pour l'identifiant "${kioskId}".` 
       });
     }
 
-    // Création du rapport avec la liaison forte
+    // Création du rapport avec la liaison forte garantie (kiosk._id et kiosk.name existent forcément ici)
     const newReport = new DailyReport({
-      kiosk: kiosk._id, // 🆕 ObjectId lié
-      kioskName: kiosk.name, // Nom du kiosque
+      kiosk: kiosk._id,       // Liaison ObjectId
+      kioskName: kiosk.name,  // Nom du kiosque garanti d'être renseigné
       date,
       moment,
       soldeAM1,
@@ -74,6 +82,9 @@ exports.getReports = async (req, res) => {
       const kiosk = await Kiosk.findOne({ id: kioskId });
       if (kiosk) {
         query.kiosk = kiosk._id;
+      } else {
+        // Si l'id envoyé n'existe pas, on force une requête vide pour ne pas mélanger les pinceaux
+        query.kiosk = null; 
       }
     }
 

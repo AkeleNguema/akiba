@@ -12,6 +12,8 @@ function App() {
   ];
 
   const [kioskConnecte, setKioskConnecte] = useState(null); 
+  const [kioskConnecteId, setKioskConnecteId] = useState(null); // ID MongoDB unique
+  const [kioskIdTechnique, setKioskIdTechnique] = useState(null); // Stocke l'id textuel
   const [kioskEnCoursDeConnexion, setKioskEnCoursDeConnexion] = useState(null); // Stocke le kiosque sélectionné pour le PIN
   const [voirTousLesTickets, setVoirTousLesTickets] = useState(false);
   const [ticketSelectionne, setTicketSelectionne] = useState(null);
@@ -27,19 +29,12 @@ function App() {
     comAM1: '', comAM2: '', comMC: '', note: ''
   });
 
-  const [totalEnDirect, setTotalEnDirect] = useState(0);
-
-  // 🆕 Récupère uniquement les rapports du kiosque connecté via l'API
+  // Récupère l'historique directement avec l'ID unique du kiosque connecté
   const chargerHistorique = async () => {
-    if (!kioskConnecte) return;
-    
-    // Trouver l'identifiant technique (id) du kiosque connecté
-    const currentKiosk = kiosksData.find(k => k.name === kioskConnecte);
-    if (!currentKiosk) return;
+    if (!kioskConnecteId) return;
 
     try {
-      // On passe le kioskId en paramètre de requête (Query Param)
-      const response = await axios.get(`http://127.0.0.1:5000/api/reports?kioskId=${currentKiosk.id}`);
+      const response = await axios.get(`http://127.0.0.1:5000/api/reports?kioskId=${kioskIdTechnique}`);
       setHistoriqueRapports(response.data);
     } catch (err) {
       console.error("Erreur lors du chargement de l'historique :", err);
@@ -48,19 +43,23 @@ function App() {
 
   useEffect(() => {
     chargerHistorique();
-  }, [kioskConnecte]);
+  }, [kioskConnecteId]); // Se déclenche dès que l'ID connecté change
 
-  useEffect(() => {
+  // Gestion de la saisie
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+ // ✅ CALCUL DU TOTAL SYNCHRONE ET PROPRE
+  const calculerTotal = () => {
     const am1 = Number(formData.soldeAM1) || 0;
     const am2 = Number(formData.soldeAM2) || 0;
+    const especes = Number(formData.soldeEspeces) || 0;
     const libPrincipal = Number(formData.soldePrincipalLibertis) || 0;
     const libCashout = Number(formData.soldeCashoutLibertis) || 0;
     const express = Number(formData.soldeExpress) || 0;
-    setTotalEnDirect(am1 + am2 + libPrincipal + libCashout + express);
-  }, [formData.soldeAM1, formData.soldeAM2, formData.soldePrincipalLibertis, formData.soldeCashoutLibertis, formData.soldeExpress]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    return (am1 + am2 + especes + libPrincipal + libCashout + express).toLocaleString('fr-FR') + " FCFA";
   };
 
   // Clic sur une carte : on ouvre d'abord le pop-up en stockant le kiosque cible
@@ -80,29 +79,27 @@ function App() {
       });
 
       if (response.data.success) {
-        // Connexion réussie : On connecte le kiosque et ferme le modal
+        // Connexion réussie : On enregistre les données de session
         setKioskConnecte(response.data.kiosk.name);
+        setKioskConnecteId(response.data.kiosk._id); // Vrai _id MongoDB
+        setKioskIdTechnique(response.data.kiosk.id); // Sauvegarde de l'id technique (ex: 'akibacharbonnage')
         setKioskEnCoursDeConnexion(null);
       }
     } catch (err) {
-      // Récupération de l'erreur renvoyée par le backend (ex: "Code PIN incorrect.")
       const errorMessage = err.response?.data?.message || "Impossible de joindre le serveur.";
       alert(errorMessage);
     }
   };
 
-  // 🆕 Soumission du formulaire lié au kiosque
+  // Soumission du formulaire de rapport
   const handleSubmit = async (e) => {
     e.preventDefault();
     setRapportSauvegarde(null);
     setError(null);
 
-    // Récupérer l'identifiant technique du kiosque connecté
-    const currentKiosk = kiosksData.find(k => k.name === kioskConnecte);
-
     try {
       const response = await axios.post('http://127.0.0.1:5000/api/reports', {
-        kioskId: currentKiosk?.id, // 🆕 Liaison via l'ID technique
+        kioskId: kioskIdTechnique, // Envoie la bonne référence textuelle stable
         date: formData.date,
         moment: formData.moment,
         soldeAM1: Number(formData.soldeAM1) || 0,
@@ -163,7 +160,16 @@ function App() {
           <div className="header-akiba">
             <div className="brand-zone">
               <h1>Akiba</h1>
-              <button className="logout-btn" onClick={() => setKioskConnecte(null)}>◀ Changer de kiosque</button>
+              <button 
+                className="logout-btn" 
+                onClick={() => { 
+                  setKioskConnecte(null); 
+                  setKioskConnecteId(null); 
+                  setKioskIdTechnique(null); 
+                }}
+              >
+                ◀ Changer de kiosque
+              </button>
             </div>
             <button 
               className={`kiosk-account-btn ${voirTousLesTickets ? 'active' : ''}`}
@@ -246,6 +252,12 @@ function App() {
                         <div className="receipt-row"><span>Divers :</span> <span>{ticketSelectionne.divers?.toLocaleString('fr-FR')} FCFA</span></div>
                         <div className="receipt-row"><span>Vente SIM :</span> <span>{ticketSelectionne.venteSim?.toLocaleString('fr-FR')} FCFA</span></div>
                       </div>
+                      {ticketSelectionne.note && (
+                        <div className="receipt-section">
+                          <h4>📝 NOTE</h4>
+                          <p style={{ fontStyle: 'italic', color: '#555', whiteSpace: 'pre-line' }}>{ticketSelectionne.note}</p>
+                        </div>
+                      )}
                       <div className="receipt-divider"></div>
                       <div className="receipt-footer">
                         <div className="receipt-total-row"><span>TOTAL :</span> <strong>{ticketSelectionne.totalCalcule?.toLocaleString('fr-FR')} FCFA</strong></div>
@@ -274,19 +286,66 @@ function App() {
               </div>
               
               <h3 className="section-title">📱 Détail Airtel Money</h3>
-              <div className="form-row"><div className="form-group"><label>Solde AM1 :</label><input type="number" name="soldeAM1" value={formData.soldeAM1} onChange={handleChange} /></div><div className="form-group"><label>Solde AM2 :</label><input type="number" name="soldeAM2" value={formData.soldeAM2} onChange={handleChange} /></div></div>
+              <div className="form-row">
+                <div className="form-group"><label>Solde AM1 :</label><input type="number" name="soldeAM1" value={formData.soldeAM1} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde AM2 :</label><input type="number" name="soldeAM2" value={formData.soldeAM2} onChange={handleChange} /></div>
+              </div>
+              
               <h3 className="section-title">📞 Détail Libertis</h3>
-              <div className="form-row"><div className="form-group"><label>Solde Principal :</label><input type="number" name="soldePrincipalLibertis" value={formData.soldePrincipalLibertis} onChange={handleChange} /></div><div className="form-group"><label>Solde Cashout :</label><input type="number" name="soldeCashoutLibertis" value={formData.soldeCashoutLibertis} onChange={handleChange} /></div></div>
+              <div className="form-row">
+                <div className="form-group"><label>Solde Principal :</label><input type="number" name="soldePrincipalLibertis" value={formData.soldePrincipalLibertis} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde Cashout :</label><input type="number" name="soldeCashoutLibertis" value={formData.soldeCashoutLibertis} onChange={handleChange} /></div>
+              </div>
+              
               <h3 className="section-title">💵 Espèces & Express</h3>
-              <div className="form-row"><div className="form-group"><label>Solde Espèces :</label><input type="number" name="soldeEspeces" value={formData.soldeEspeces} onChange={handleChange} /></div><div className="form-group"><label>Solde Express :</label><input type="number" name="soldeExpress" value={formData.soldeExpress} onChange={handleChange} /></div></div>
+              <div className="form-row">
+                <div className="form-group"><label>Solde Espèces :</label><input type="number" name="soldeEspeces" value={formData.soldeEspeces} onChange={handleChange} /></div>
+                <div className="form-group"><label>Solde Express :</label><input type="number" name="soldeExpress" value={formData.soldeExpress} onChange={handleChange} /></div>
+              </div>
+              
               <h3 className="section-title">💰 Commissions</h3>
-              <div className="form-row"><div className="form-group"><label>Com AM1 :</label><input type="number" name="comAM1" value={formData.comAM1} onChange={handleChange} /></div><div className="form-group"><label>Com AM2 :</label><input type="number" name="comAM2" value={formData.comAM2} onChange={handleChange} /></div><div className="form-group"><label>Com MC :</label><input type="number" name="comMC" value={formData.comMC} onChange={handleChange} /></div></div>
+              <div className="form-row">
+                <div className="form-group"><label>Com AM1 :</label><input type="number" name="comAM1" value={formData.comAM1} onChange={handleChange} /></div>
+                <div className="form-group"><label>Com AM2 :</label><input type="number" name="comAM2" value={formData.comAM2} onChange={handleChange} /></div>
+                <div className="form-group"><label>Com MC :</label><input type="number" name="comMC" value={formData.comMC} onChange={handleChange} /></div>
+              </div>
+              
               <h3 className="section-title">📦 Autres Flux</h3>
-              <div className="form-row"><div className="form-group"><label>Divers :</label><input type="number" name="divers" value={formData.divers} onChange={handleChange} /></div><div className="form-group"><label>Vente SIM :</label><input type="number" name="venteSim" value={formData.venteSim} onChange={handleChange} /></div></div>
+              <div className="form-row">
+                <div className="form-group"><label>Divers :</label><input type="number" name="divers" value={formData.divers} onChange={handleChange} /></div>
+                <div className="form-group"><label>Vente SIM :</label><input type="number" name="venteSim" value={formData.venteSim} onChange={handleChange} /></div>
+              </div>
 
+              <h3 className="section-title">📝 Note / Observation</h3>
+              <div className="form-row">
+                <div className="form-group" style={{ width: '100%' }}>
+                  <label>Commentaire additionnel :</label>
+                  <textarea 
+                    name="note" 
+                    value={formData.note} 
+                    onChange={handleChange} 
+                    placeholder="Saisissez des remarques ou des observations sur la journée..." 
+                    rows="3"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      borderRadius: '6px',
+                      border: '1px solid #ccc',
+                      fontFamily: 'inherit',
+                      fontSize: '14px',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* ✅ APPEL DE LA FONCTION DE CALCUL EN HAUT DU CODE */}
               <div className="total-box">
                 <span>Total Principal Calculé :</span>
-                <strong>{totalEnDirect.toLocaleString('fr-FR')} FCFA</strong>
+                <strong className="notranslate" translate="no">
+                {calculerTotal()}
+                </strong>
+                
               </div>
               <button type="submit" className="submit-btn">Enregistrer la journée</button>
             </form>

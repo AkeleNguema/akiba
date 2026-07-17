@@ -9,17 +9,17 @@ exports.seedKiosks = async (req, res) => {
     // Liste des kiosques d'Akiba à insérer avec leurs codes PIN par défaut
     const defaultKiosks = [
       { 
-        id: 'akibacharbonnage', 
+        id: 'akibacharbonnage', // ✅ Utilisation de "id" pour correspondre au schéma
         name: 'Kiosque Charbonnages', 
-        pin: '2025' // Sera automatiquement haché par notre modèle Kiosk.js !
+        pin: '2025' 
       },
       { 
-        id: 'akibaalibandeng', 
+        id: 'akibaalibandeng',  // ✅ Utilisation de "id" pour correspondre au schéma
         name: 'Kiosque Alibandeng', 
         pin: '0700' 
       },
       { 
-        id: 'akibaondogo', 
+        id: 'akibaondogo',      // ✅ Utilisation de "id" pour correspondre au schéma
         name: 'Kiosque Ondogo', 
         pin: '7128' 
       }
@@ -31,7 +31,7 @@ exports.seedKiosks = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Les kiosques Akiba ont été initialisés avec succès !',
-      data: createdKiosks.map(k => ({ id: k.id, name: k.name })) // On renvoie les infos sans les PINs hachés
+      data: createdKiosks.map(k => ({ id: k.id, name: k.name })) // ✅ Retourne bien k.id
     });
 
   } catch (error) {

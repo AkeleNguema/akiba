@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const DailyReportSchema = new mongoose.Schema({
-    
     kiosk: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Kiosk',
@@ -22,15 +21,15 @@ const DailyReportSchema = new mongoose.Schema({
         enum: ['Matin', 'Soir'],
         default: 'Soir'
     },
-    // Les 5 Flux Financiers pour le calcul du total
+    // Les 6 Flux Financiers pour le calcul du total
     soldeAM1: { type: Number, default: 0 },
     soldeAM2: { type: Number, default: 0 },
     soldePrincipalLibertis: { type: Number, default: 0 },
     soldeCashoutLibertis: { type: Number, default: 0 },
     soldeExpress: { type: Number, default: 0 },
+    soldeEspeces: { type: Number, default: 0 },
     
     // Autres flux saisis (exclus du calcul automatique)
-    soldeEspeces: { type: Number, default: 0 },
     venteSim: { type: Number, default: 0 },
     divers: { type: Number, default: 0 },
     comAM1: { type: Number, default: 0 },
@@ -42,15 +41,15 @@ const DailyReportSchema = new mongoose.Schema({
     note: { type: String, trim: true }
 }, { timestamps: true });
 
-// Calcul automatique du total avant sauvegarde
-DailyReportSchema.pre('save', function (next) {
+// ✅ CORRIGÉ : Calcul automatique asynchrone moderne sur les 6 flux
+DailyReportSchema.pre('save', async function () {
     this.totalCalcule = 
-        (this.soldeAM1 || 0) + 
-        (this.soldeAM2 || 0) + 
-        (this.soldePrincipalLibertis || 0) + 
-        (this.soldeCashoutLibertis || 0) + 
-        (this.soldeExpress || 0);
-    next();
+        (Number(this.soldeAM1) || 0) + 
+        (Number(this.soldeAM2) || 0) + 
+        (Number(this.soldeEspeces) || 0) +
+        (Number(this.soldePrincipalLibertis) || 0) + 
+        (Number(this.soldeCashoutLibertis) || 0) + 
+        (Number(this.soldeExpress) || 0);
 });
 
 module.exports = mongoose.model('DailyReport', DailyReportSchema);

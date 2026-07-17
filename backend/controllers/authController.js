@@ -36,6 +36,7 @@ exports.verifyPin = async (req, res) => {
       success: true,
       message: 'Connexion réussie !',
       kiosk: {
+        _id: kiosk._id,
         id: kiosk.id,
         name: kiosk.name
       }
