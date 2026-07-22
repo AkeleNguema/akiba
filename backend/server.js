@@ -25,20 +25,22 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 
-// ✅ 2. On récupère la variable d'environnement système
-const uri = process.env.MONGO_URI;
-
-if (!uri) {
-    console.error("❌ ERREUR CRITIQUE : La variable MONGO_URI n'est pas définie dans l'environnement !");
-    process.exit(1); // Arrête le processus pour éviter les boucles de timeouts
-}
+// ✅ 2. Connexion directe avec ton URI MongoDB Atlas
+const uri = "mongodb+srv://akelenguema_db_user:azMe0yh9QkxnourQ@cluster0.w57azpl.mongodb.net/akiba?appName=Cluster0";
 
 // Connexion à MongoDB Atlas et initialisation automatique
-mongoose.connect(uri)
+
+// ✅ Options pour forcer IPv4 et éviter les boucles d'attente sur Render
+const mongooseOptions = {
+    family: 4,                      // Force Mongoose à utiliser IPv4 (résout le bug Render)
+    serverSelectionTimeoutMS: 5000, // Abandonne au bout de 5s au lieu de bloquer indéfiniment
+};
+
+// Connexion à MongoDB Atlas
+mongoose.connect(uri, mongooseOptions)
     .then(async () => {
         console.log("Connexion réussie à MongoDB Atlas ! 🍃");
         
-        // Vérification automatique et réinjection des kiosques si la collection est vide
         try {
             const count = await Kiosk.countDocuments();
             if (count === 0) {
@@ -57,7 +59,11 @@ mongoose.connect(uri)
             console.error("Erreur lors de l'initialisation automatique :", seedError);
         }
     })
-    .catch(err => console.error("Erreur de connexion à MongoDB :", err));
+    .catch(err => {
+        console.error("❌ ERREUR DE CONNEXION MONGODB :", err.message);
+    });
+
+
 
 // Première route de test
 app.get('/', (req, res) => {
