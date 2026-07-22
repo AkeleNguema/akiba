@@ -5,7 +5,7 @@ exports.verifyPin = async (req, res) => {
   try {
     const { kioskId, pin } = req.body;
 
-    //  Validation rapide des champs
+    // Validation rapide des champs
     if (!kioskId || !pin) {
       return res.status(400).json({ 
         success: false, 
@@ -13,7 +13,7 @@ exports.verifyPin = async (req, res) => {
       });
     }
 
-    //  Recherche du kiosque en BDD
+    // Recherche du kiosque en BDD
     const kiosk = await Kiosk.findOne({ id: kioskId });
     if (!kiosk) {
       return res.status(404).json({ 
@@ -22,7 +22,7 @@ exports.verifyPin = async (req, res) => {
       });
     }
 
-    //  Comparaison du code PIN saisi avec le PIN haché
+    // Comparaison du code PIN saisi avec le PIN haché
     const isMatch = await kiosk.comparePin(pin);
     if (!isMatch) {
       return res.status(401).json({ 
@@ -31,7 +31,7 @@ exports.verifyPin = async (req, res) => {
       });
     }
 
-    //  Succès
+    // Succès
     res.status(200).json({
       success: true,
       message: 'Connexion réussie !',
@@ -47,6 +47,44 @@ exports.verifyPin = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Une erreur serveur est survenue lors de la connexion.' 
+    });
+  }
+};
+
+// Connexion Administrateur
+exports.loginAdmin = async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    // Mot de passe admin (défini en variable d'environnement ou valeur par défaut)
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+
+    if (!password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Le mot de passe est requis." 
+      });
+    }
+
+    if (password !== ADMIN_PASSWORD) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Mot de passe administrateur incorrect." 
+      });
+    }
+
+    // Connexion réussie
+    return res.status(200).json({
+      success: true,
+      message: "Connexion administrateur réussie !",
+      role: "admin"
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la connexion admin :", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Erreur serveur lors de la connexion." 
     });
   }
 };
