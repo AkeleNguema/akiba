@@ -1,53 +1,53 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import KioskCard from './components/KioskCard';
 import LoginModal from './components/LoginModal'; 
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import ProtectedAdminRoute from './components/ProtectedRoute';
 import './App.css';
 
-function App() {
-  const kiosksData = [
-    { id: 'akibacharbonnage', name: 'Kiosque Charbonnages' },
-    { id: 'akibaalibandeng', name: 'Kiosque Alibandeng' },
-    { id: 'akibaondogo', name: 'Kiosque Ondogo' }
-  ];
+// Composant principal pour la gestion des kiosques
+function KioskApp() {
+      const kiosksData = [
+        { id: 'akibacharbonnage', name: 'Kiosque Charbonnages' },
+        { id: 'akibaalibandeng', name: 'Kiosque Alibandeng' },
+        { id: 'akibaondogo', name: 'Kiosque Ondogo' }
+      ];
 
-  const [kioskConnecte, setKioskConnecte] = useState(null); 
-  const [kioskConnecteId, setKioskConnecteId] = useState(null); // ID MongoDB unique
-  const [kioskIdTechnique, setKioskIdTechnique] = useState(null); // Stocke l'id textuel
-  const [kioskEnCoursDeConnexion, setKioskEnCoursDeConnexion] = useState(null); // Stocke le kiosque sélectionné pour le PIN
-  const [voirTousLesTickets, setVoirTousLesTickets] = useState(false);
-  const [ticketSelectionne, setTicketSelectionne] = useState(null);
-  const [historiqueRapports, setHistoriqueRapports] = useState([]);
-  const [error, setError] = useState(null);
-  const [rapportSauvegarde, setRapportSauvegarde] = useState(null);
+      const [kioskConnecte, setKioskConnecte] = useState(null); 
+      const [kioskConnecteId, setKioskConnecteId] = useState(null);
+      const [kioskIdTechnique, setKioskIdTechnique] = useState(null);
+      const [kioskEnCoursDeConnexion, setKioskEnCoursDeConnexion] = useState(null);
+      const [voirTousLesTickets, setVoirTousLesTickets] = useState(false);
+      const [ticketSelectionne, setTicketSelectionne] = useState(null);
+      const [historiqueRapports, setHistoriqueRapports] = useState([]);
+      const [error, setError] = useState(null);
+      const [rapportSauvegarde, setRapportSauvegarde] = useState(null);
 
-  // Initialisation des valeurs financières à 0 pour éviter les bugs de rendu
-  const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    moment: 'Soir',
-    soldeAM1: 0, soldeAM2: 0, soldePrincipalLibertis: 0, soldeCashoutLibertis: 0,
-    soldeExpress: 0, soldeEspeces: 0, venteSim: 0, divers: 0,
-    comAM1: 0, comAM2: 0, comMC: 0, note: ''
-  });
+      const [formData, setFormData] = useState({
+        date: new Date().toISOString().split('T')[0],
+        moment: 'Soir',
+        soldeAM1: 0, soldeAM2: 0, soldePrincipalLibertis: 0, soldeCashoutLibertis: 0,
+        soldeExpress: 0, soldeEspeces: 0, venteSim: 0, divers: 0,
+        comAM1: 0, comAM2: 0, comMC: 0, note: ''
+      });
 
-  // Récupère l'historique directement avec l'ID unique du kiosque connecté (sans try-catch)
   const chargerHistorique = async () => {
     if (!kioskConnecteId) return;
-
     const response = await axios.get(`https://akiba-bb4r.onrender.com/api/reports?kioskId=${kioskIdTechnique}`);
     setHistoriqueRapports(response.data);
   };
 
   useEffect(() => {
     chargerHistorique();
-  }, [kioskConnecteId]); // Se déclenche dès que l'ID connecté change
+  }, [kioskConnecteId]);
 
-  // Gestion de la saisie
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Calcul du total synchrone et propre
   const calculerTotal = () => {
     const am1 = Number(formData.soldeAM1) || 0;
     const am2 = Number(formData.soldeAM2) || 0;
@@ -59,15 +59,12 @@ function App() {
     return (am1 + am2 + especes + libPrincipal + libCashout + express).toLocaleString('fr-FR') + " FCFA";
   };
 
-  // Clic sur une carte : on ouvre d'abord le pop-up en stockant le kiosque cible
   const handleSelectKiosk = (name, id) => {
     setKioskEnCoursDeConnexion({ name, id });
   };
 
-  // Soumission du code PIN en direct avec le Backend (sans try-catch)
   const handlePinSubmit = async (pinEntered) => {
     setError(null);
-
     const response = await axios.post('https://akiba-bb4r.onrender.com/api/auth/verify-pin', {
       kioskId: kioskEnCoursDeConnexion.id,
       pin: pinEntered
@@ -75,13 +72,12 @@ function App() {
 
     if (response.data.success) {
       setKioskConnecte(response.data.kiosk.name);
-      setKioskConnecteId(response.data.kiosk._id); // Vrai _id MongoDB
-      setKioskIdTechnique(response.data.kiosk.id); // Sauvegarde de l'id technique
+      setKioskConnecteId(response.data.kiosk._id);
+      setKioskIdTechnique(response.data.kiosk.id);
       setKioskEnCoursDeConnexion(null);
     }
   };
 
-  // Soumission du formulaire de rapport (sans try-catch)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setRapportSauvegarde(null);
@@ -120,8 +116,6 @@ function App() {
 
   return (
     <div className="app-container">
-      
-      {/* ÉCRAN D'ACCUEIL : SÉLECTION DU KIOSQUE */}
       {!kioskConnecte ? (
         <div className="home-screen">
           <div className="welcome-header">
@@ -141,8 +135,6 @@ function App() {
           </div>
         </div>
       ) : (
-        
-        /* ÉCRAN DE TRAVAIL (FORMULAIRE & TICKETS) */
         <>
           <div className="header-akiba">
             <div className="brand-zone">
@@ -326,7 +318,6 @@ function App() {
                 </div>
               </div>
 
-              {/* ✅ AFFICHAGE SÉCURISÉ CONTRE LES TRADUCTEURS DE NAVIGATEUR */}
               <div className="total-box">
                 <span>Total Principal Calculé :</span>
                 <strong className="notranslate" translate="no">
@@ -339,7 +330,6 @@ function App() {
         </>
       )}
 
-      {/* Rendu du LoginModal s'il y a un kiosque en cours de connexion */}
       {kioskEnCoursDeConnexion && (
         <LoginModal
           kioskName={kioskEnCoursDeConnexion.name}
@@ -347,8 +337,22 @@ function App() {
           onConfirm={handlePinSubmit}
         />
       )}
-
     </div>
+  );
+}
+
+// Routeur principal de l'application
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<KioskApp />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<ProtectedAdminRoute>
+          <AdminDashboard /> </ProtectedAdminRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
