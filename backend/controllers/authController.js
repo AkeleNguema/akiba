@@ -1,4 +1,5 @@
 const Kiosk = require('../models/Kiosk');
+const jwt = require('jsonwebtoken');
 
 // Vérifier le code PIN d'un kiosque
 exports.verifyPin = async (req, res) => {
@@ -55,9 +56,8 @@ exports.verifyPin = async (req, res) => {
 exports.loginAdmin = async (req, res) => {
   try {
     const { password } = req.body;
-
-    // Mot de passe admin (défini en variable d'environnement ou valeur par défaut)
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    const JWT_SECRET = process.env.JWT_SECRET || "akiba_secret_key_2026";
 
     if (!password) {
       return res.status(400).json({ 
@@ -73,10 +73,17 @@ exports.loginAdmin = async (req, res) => {
       });
     }
 
-    // Connexion réussie
+    // Génération du token JWT (valide 24h)
+    const token = jwt.sign(
+      { role: "admin" }, 
+      JWT_SECRET, 
+      { expiresIn: "24h" }
+    );
+
     return res.status(200).json({
       success: true,
       message: "Connexion administrateur réussie !",
+      token,
       role: "admin"
     });
 
