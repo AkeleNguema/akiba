@@ -11,10 +11,20 @@ function AdminDashboard() {
 
   const navigate = useNavigate();
 
+  // URL dynamique de l'API avec valeur de secours si la variable .env n'est pas chargée
+  const API_URL = import.meta.env.VITE_API_URL || 'https://akiba-bb4r.onrender.com';
+
   const chargerTousLesRapports = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://akiba-bb4r.onrender.com/api/reports');
+      const token = localStorage.getItem('adminToken');
+
+      const response = await axios.get(`${API_URL}/api/reports`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
       setRapports(response.data);
     } catch (error) {
       console.error('Erreur lors de la récupération des rapports :', error);
@@ -29,6 +39,7 @@ function AdminDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('isAdmin');
+    localStorage.removeItem('adminToken');
     navigate('/admin/login');
   };
 

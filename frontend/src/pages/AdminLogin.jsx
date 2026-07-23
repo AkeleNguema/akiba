@@ -18,12 +18,13 @@ function AdminLogin() {
         password
       });
 
+
       if (response.data.success) {
-        // Enregistre l'état de connexion administrateur
+        localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('isAdmin', 'true');
-        // Redirige vers le tableau de bord
         navigate('/admin/dashboard');
       }
+
     } catch (err) {
       console.error('Erreur lors de la connexion admin :', err);
       if (err.response && err.response.data && err.response.data.message) {
