@@ -15,6 +15,7 @@ const reportRoutes = require('./routes/reports');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
+
 
 // ✅ 2. Connexion directe avec ton URI MongoDB Atlas
 const uri = "mongodb+srv://akelenguema_db_user:azMe0yh9QkxnourQ@cluster0.w57azpl.mongodb.net/akiba?appName=Cluster0";

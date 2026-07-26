@@ -95,3 +95,47 @@ exports.loginAdmin = async (req, res) => {
     });
   }
 };
+
+// Modification du code PIN d'un kiosque par l'admin
+exports.updateKioskPin = async (req, res) => {
+  try {
+    const { kioskId } = req.params;
+    const { newPin } = req.body;
+
+    if (!newPin || newPin.length !== 4) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Le code PIN doit comporter exactement 4 chiffres." 
+      });
+    }
+
+    const kiosk = await Kiosk.findOne({ id: kioskId });
+
+    if (!kiosk) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Kiosque non trouvé." 
+      });
+    }
+
+    kiosk.pin = newPin;
+    await kiosk.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Code PIN mis à jour avec succès pour ${kiosk.name} !`,
+      kiosk: {
+        _id: kiosk._id,
+        id: kiosk.id,
+        name: kiosk.name
+      }
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du PIN :", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Erreur serveur lors de la modification du PIN." 
+    });
+  }
+};

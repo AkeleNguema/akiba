@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// Route POST : http://localhost:5000/api/auth/verify-pin
+// Route publisues
 router.post('/verify-pin', authController.verifyPin);
-
-// Route POST : Connexion Administrateur
 router.post('/admin-login', authController.loginAdmin);
+
+// Route protégée pour l'admin
+router.put('/kiosk/:kioskId/pin', authMiddleware, authController.updateKioskPin);
 
 module.exports = router;
