@@ -9,22 +9,28 @@ function AdminDashboard() {
   const [filtreDate, setFiltreDate] = useState('');
   const [ticketSelectionne, setTicketSelectionne] = useState(null);
 
-  const navigate = useNavigate();
+  // État pour la modification du PIN
+  const [selectedKioskForPin, setSelectedKioskForPin] = useState('akibacharbonnage');
+  const [newPin, setNewPin] = useState('');
+  const [pinMessage, setPinMessage] = useState(null);
+  const [pinLoading, setPinLoading] = useState(false);
 
-  // URL dynamique de l'API avec valeur de secours si la variable .env n'est pas chargée
+  const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL || 'https://akiba-bb4r.onrender.com';
+
+  const kiosksList = [
+    { id: 'akibacharbonnage', name: 'Kiosque Charbonnages' },
+    { id: 'akibaalibandeng', name: 'Kiosque Alibandeng' },
+    { id: 'akibaondogo', name: 'Kiosque Ondogo' }
+  ];
 
   const chargerTousLesRapports = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
-
       const response = await axios.get(`${API_URL}/api/reports`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-
       setRapports(response.data);
     } catch (error) {
       console.error('Erreur lors de la récupération des rapports :', error);
@@ -43,17 +49,47 @@ function AdminDashboard() {
     navigate('/admin/login');
   };
 
-  // Filtrage flexible (teste si la valeur sélectionnée correspond à l'ID ou au nom du kiosque)
+  // Modification du PIN
+  const handleUpdatePin = async (e) => {
+    e.preventDefault();
+    setPinMessage(null);
+
+    if (newPin.length !== 4) {
+      setPinMessage({ type: 'error', text: 'Le code PIN doit comporter 4 chiffres.' });
+      return;
+    }
+
+    try {
+      setPinLoading(true);
+      const token = localStorage.getItem('adminToken');
+
+      const response = await axios.put(
+        `${API_URL}/api/auth/kiosk/${selectedKioskForPin}/pin`,
+        { newPin },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setPinMessage({ type: 'success', text: response.data.message });
+        setNewPin('');
+      }
+    } catch (error) {
+      setPinMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Erreur lors de la modification.'
+      });
+    } finally {
+      setPinLoading(false);
+    }
+  };
+
+  // Filtrage des rapports
   const rapportsFiltres = rapports.filter((r) => {
     const kId = (r.kioskId || '').toLowerCase();
     const kName = (r.kioskName || '').toLowerCase();
     const target = filtreKiosque.toLowerCase();
 
-    const matchKiosk = 
-      filtreKiosque === 'tous' || 
-      kId === target || 
-      kName.includes(target);
-
+    const matchKiosk = filtreKiosque === 'tous' || kId === target || kName.includes(target);
     const matchDate = !filtreDate || new Date(r.date).toISOString().split('T')[0] === filtreDate;
 
     return matchKiosk && matchDate;
@@ -61,19 +97,130 @@ function AdminDashboard() {
 
   const totalCumule = rapportsFiltres.reduce((sum, r) => sum + (r.totalCalcule || 0), 0);
 
+  // Fonction d'exportation en CSV (Excel)
+  const exporterEnCSV = () => {
+    if (rapportsFiltres.length === 0) {
+      alert("Aucun rapport à exporter.");
+      return;
+    }
+
+    const enTetes = ["Date", "Kiosque", "Moment", "AM1", "AM2", "Libertis Principal", "Libertis Cashout", "Espèces", "Express", "Com AM1", "Com AM2", "Com MC", "Divers", "Vente SIM", "Total (FCFA)", "Note"];
+    
+    const lignes = rapportsFiltres.map(r => [
+      new Date(r.date).toLocaleDateString('fr-FR'),
+      `"${r.kioskName || r.kioskId}"`,
+      r.moment || '',
+      r.soldeAM1 || 0,
+      r.soldeAM2 || 0,
+      r.soldePrincipalLibertis || 0,
+      r.soldeCashoutLibertis || 0,
+      r.soldeEspeces || 0,
+      r.soldeExpress || 0,
+      r.comAM1 || 0,
+      r.comAM2 || 0,
+      r.comMC || 0,
+      r.divers || 0,
+      r.venteSim || 0,
+      r.totalCalcule || 0,
+      `"${(r.note || '').replace(/"/g, '""')}"`
+    ]);
+
+    const contenuCSV = "\uFEFF" + [enTetes.join(";"), ...lignes.map(e => e.join(";"))].join("\n");
+    const blob = new Blob([contenuCSV], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `rapports_akiba_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="app-container" style={{ maxWidth: '1100px' }}>
       
       <div className="header-akiba" style={{ marginBottom: '20px' }}>
         <div className="brand-zone">
           <h1>Akiba Admin</h1>
-          <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Supervision et rapports</p>
+          <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>Supervision et gestion</p>
         </div>
         <button className="logout-btn" onClick={handleLogout}>
           🚪 Déconnexion
         </button>
       </div>
 
+      {/* Bloc Modification de PIN */}
+      <div style={{
+        background: '#fff',
+        border: '1px solid #e0e0e0',
+        padding: '15px 20px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+      }}>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#333' }}>
+          🔑 Modification du Code PIN d'un Kiosque
+        </h3>
+        <form onSubmit={handleUpdatePin} style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold' }}>Kiosque :</label>
+            <select
+              value={selectedKioskForPin}
+              onChange={(e) => setSelectedKioskForPin(e.target.value)}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              {kiosksList.map((k) => (
+                <option key={k.id} value={k.id}>{k.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold' }}>Nouveau PIN (4 chiffres) :</label>
+            <input
+              type="password"
+              maxLength="4"
+              placeholder="Ex: 1234"
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+              style={{ padding: '7px', borderRadius: '4px', border: '1px solid #ccc', width: '120px' }}
+              required
+            />
+          </div>
+
+          <div style={{ marginTop: '16px' }}>
+            <button
+              type="submit"
+              disabled={pinLoading}
+              style={{
+                backgroundColor: '#1976d2',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {pinLoading ? 'Mise à jour...' : 'Enregistrer le nouveau PIN'}
+            </button>
+          </div>
+        </form>
+
+        {pinMessage && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            borderRadius: '4px',
+            fontSize: '13px',
+            backgroundColor: pinMessage.type === 'success' ? '#e8f5e9' : '#ffebee',
+            color: pinMessage.type === 'success' ? '#2e7d32' : '#c62828'
+          }}>
+            {pinMessage.text}
+          </div>
+        )}
+      </div>
+
+      {/* Bloc Filtres, Export et Total */}
       <div style={{
         background: '#f5f5f5',
         padding: '15px',
@@ -85,7 +232,7 @@ function AdminDashboard() {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold' }}>Filtrer par Kiosque :</label>
             <select 
@@ -117,6 +264,21 @@ function AdminDashboard() {
               </button>
             )}
           </div>
+
+          <button
+            onClick={exporterEnCSV}
+            style={{
+              backgroundColor: '#2e7d32',
+              color: '#ffffff',
+              border: 'none',
+              padding: '8px 14px',
+              borderRadius: '4px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            📊 Exporter (Excel / CSV)
+          </button>
         </div>
 
         <div style={{ textAlign: 'right' }}>
@@ -129,6 +291,7 @@ function AdminDashboard() {
         </div>
       </div>
 
+      {/* Liste des tickets et Reçu */}
       {loading ? (
         <p style={{ textAlign: 'center', padding: '40px' }}>Chargement des données en cours...</p>
       ) : (
